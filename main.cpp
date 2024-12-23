@@ -1,9 +1,11 @@
 #include <iostream>
 #include <windows.h>
+#include <thread>
 
 using namespace std;
 void createAssets();
 int rotate(int px, int py, int rotation);
+bool doesPieceFit(int tetrominoIndex, int rotation, int posX, int posY);
 
 wstring tetromino[7];
 int fieldWidth = 12;
@@ -35,13 +37,52 @@ int main()
     // Game Logic
 
     bool gameOver = false;
-    while (!gameOver) {
 
+    int currentPiece = 2;
+    int currentRotation = 0;
+    int currentX = fieldWidth / 2;
+    int currentY = 0;
+
+    bool keys[4];
+    bool rotationPressed;
+
+    while (!gameOver) {
+        // GMAE TIMING
+        this_thread::sleep_for(50ms);
+
+
+        // INPUT
+        for (int i = 0; i < 4; i++)
+            keys[i] = (0x8000 & GetAsyncKeyState((unsigned char)("\x27\x25\x28Z"[i])));
+            
+
+
+        // GAME LOGIC
+        currentX += (keys[0] && doesPieceFit(currentPiece, currentRotation, currentX + 1, currentY)) ? 1 : 0;
+        currentX -= (keys[1] && doesPieceFit(currentPiece, currentRotation, currentX - 1, currentY)) ? 1 : 0;
+        currentY += (keys[2] && doesPieceFit(currentPiece, currentRotation, currentX, currentY + 1)) ? 1 : 0;
+
+        if (keys[3]) {
+            currentRotation += (!rotationPressed && doesPieceFit(currentPiece, currentRotation + 1, currentX, currentY)) ? 1 : 0;
+            rotationPressed = true;
+        }
+        else 
+            rotationPressed = false;
+
+        // RENDER OUTPUT
+   
+        
+        
         // Draw Field
 
         for (int x = 0; x < fieldWidth; x++)
             for (int y = 0; y < fieldHeight; y++)
                 screen[(y + 2) * screenWidth + (x + 2)] = L" ABCDEFG=#"[playingField[y * fieldWidth + x]];
+
+        for (int px = 0; px < 4; px++)
+            for (int py = 0; py < 4; py++)
+                if (tetromino[currentPiece][rotate(px, py, currentRotation)] == L'X')
+                    screen[(currentY + py + 2) * screenWidth + (currentX + px + 2)] = currentPiece + 65;
 
         // Display Frame
 
@@ -90,12 +131,35 @@ void createAssets() {
 }
 
 int rotate(int px, int py, int rotation) {
+    int index = 0;
     switch (rotation % 4) {
-    case 0: return py * 4 + px;
-    case 1: return 12 + py - (px * 4);
-    case 2: return 15 - (py * 4) + px;
-    case 3: return 3 - py + (px * 4);
+    case 0: 
+        index = py * 4 + px;
+        break;
+    case 1: 
+        index = 12 + py - (px * 4);
+        break;
+    case 2: 
+        index = 15 - (py * 4) - px;
+        break;
+    case 3: 
+        index = 3 - py + (px * 4);
+        break;
     }
-    return 0;
+    return index;
 }
 
+bool doesPieceFit(int tetrominoIndex, int rotation, int posX, int posY) {
+
+    for (int px = 0; px < 4; px++)
+        for (int py = 0; py < 4; py++) {
+            int positionIndex = rotate(px, py, rotation);
+            int fieldIndex = (posY + py) * fieldWidth + (posX + px);
+
+            if ((posX + px >= 0 && posX + px < fieldWidth) && (posY + py >= 0 && posY + py < fieldHeight))
+                if (tetromino[tetrominoIndex][positionIndex] == L'X' && playingField[fieldIndex] != 0)
+                    return false;
+        }
+
+    return true;
+}
