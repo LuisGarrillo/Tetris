@@ -20,23 +20,34 @@ int main()
     createAssets();
     
     playingField = new unsigned char[fieldWidth * fieldHeight];
-    for (int x = 0; x < fieldWidth; x++) {
-        for (int y = 0; y < fieldHeight; y++) {
+    for (int x = 0; x < fieldWidth; x++) 
+        for (int y = 0; y < fieldHeight; y++) 
             playingField[y * fieldWidth + x] = (x == 0 || x == fieldWidth - 1 || y == fieldHeight - 1) ? 9 : 0;
-        }
-    }
 
     screen = new wchar_t[screenWidth * screenHeight];
-    for (int i = 0; i < screenWidth * screenHeight; i++) {
+    for (int i = 0; i < screenWidth * screenHeight; i++) 
         screen[i] = L' ';
-    }
+    
     HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
     SetConsoleActiveScreenBuffer(hConsole);
     DWORD dwBytesWritten = 0;
 
     // Game Logic
 
-    WriteConsoleOutputCharacter(hConsole, screen, screenWidth * screenHeight, { 0,0 }, &dwBytesWritten);
+    bool gameOver = false;
+    while (!gameOver) {
+
+        // Draw Field
+
+        for (int x = 0; x < fieldWidth; x++)
+            for (int y = 0; y < fieldHeight; y++)
+                screen[(y + 2) * screenWidth + (x + 2)] = L" ABCDEFG=#"[playingField[y * fieldWidth + x]];
+
+        // Display Frame
+
+        WriteConsoleOutputCharacter(hConsole, screen, screenWidth * screenHeight, { 0,0 }, &dwBytesWritten);
+    }
+
     return 0;
 
 }
