@@ -51,7 +51,7 @@ int main()
     int speedCounter = 0;
     bool forceDown = false;
     int pieceCount = 0;
-    int score;
+    int score = 0;
 
     vector<int> lines;
 
@@ -89,6 +89,11 @@ int main()
                     for (int py = 0; py < 4; py++)
                         if (tetromino[currentPiece][rotate(px, py, currentRotation)] == L'X')
                             playingField[(currentY + py) * fieldWidth + (currentX + px)] = currentPiece + 1;
+
+                if (currentY <= 3) {
+                    gameOver = true;
+                    break;
+                }
 
                 pieceCount++;
                 if (pieceCount % 10 == 0)
@@ -139,6 +144,7 @@ int main()
                 if (tetromino[currentPiece][rotate(px, py, currentRotation)] == L'X')
                     screen[(currentY + py + 2) * screenWidth + (currentX + px + 2)] = currentPiece + 65;
 
+        swprintf_s(&screen[2 * screenWidth + fieldWidth + 6 ], 16, L"SCORE: %8d", score);
 
 
         // Display Frame
@@ -156,7 +162,13 @@ int main()
                 }
             lines.clear();
         }
+
+
     }
+
+    CloseHandle(hConsole);
+    cout << "Game Over!! Score: " << score << endl;
+    system("pause");
 
     return 0;
 
