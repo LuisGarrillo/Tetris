@@ -1,5 +1,6 @@
 #include <iostream>
 #include <windows.h>
+#include <vector>
 #include <thread>
 
 using namespace std;
@@ -38,7 +39,7 @@ int main()
 
     bool gameOver = false;
 
-    int currentPiece = 2;
+    int currentPiece = rand() % 7;
     int currentRotation = 0;
     int currentX = fieldWidth / 2;
     int currentY = 0;
@@ -46,10 +47,19 @@ int main()
     bool keys[4];
     bool rotationPressed;
 
-    while (!gameOver) {
-        // GMAE TIMING
-        this_thread::sleep_for(50ms);
+    int speed = 20;
+    int speedCounter = 0;
+    bool forceDown = false;
+    int pieceCount = 0;
+    int score;
 
+    vector<int> lines;
+
+    while (!gameOver) {
+        // GAME TIMING
+        this_thread::sleep_for(50ms);
+        speedCounter++;
+        forceDown = (speedCounter == speed);
 
         // INPUT
         for (int i = 0; i < 4; i++)
@@ -69,10 +79,55 @@ int main()
         else 
             rotationPressed = false;
 
+        if (forceDown) {
+            if (doesPieceFit(currentPiece, currentRotation, currentX, currentY + 1)) {
+                currentY++;
+            }
+            else { 
+                // Lock the piece
+                for (int px = 0; px < 4; px++)
+                    for (int py = 0; py < 4; py++)
+                        if (tetromino[currentPiece][rotate(px, py, currentRotation)] == L'X')
+                            playingField[(currentY + py) * fieldWidth + (currentX + px)] = currentPiece + 1;
+
+                pieceCount++;
+                if (pieceCount % 10 == 0)
+                    if (speed >= 10) speed--;
+                    
+
+                // Check if we have lines
+                
+                for (int py = 0; py < 4; py++) 
+                    if (currentY + py < fieldHeight - 1) {
+                        bool line = true;
+                        for (int px = 1; px < fieldWidth -1; px++) 
+                            line &= (playingField[(currentY + py) * fieldWidth + px]) != 0;
+                        
+                        if (line) {
+                            for (int px = 1; px < fieldWidth - 1; px++)
+                                playingField[(currentY + py) * fieldWidth + px] = 8;
+
+                            lines.push_back(currentY + py);
+                        }
+                    }
+                
+                score += 25;
+                if (!lines.empty()) score += (1 << lines.size()) * 100;
+
+
+                // Choose next piece
+                currentRotation = 0;
+                currentX = fieldWidth / 2;
+                currentY = 0;
+                currentPiece = rand() % 7;
+
+                speedCounter = 0;
+            }
+            speedCounter = 0;
+        }
+
         // RENDER OUTPUT
    
-        
-        
         // Draw Field
 
         for (int x = 0; x < fieldWidth; x++)
@@ -84,9 +139,23 @@ int main()
                 if (tetromino[currentPiece][rotate(px, py, currentRotation)] == L'X')
                     screen[(currentY + py + 2) * screenWidth + (currentX + px + 2)] = currentPiece + 65;
 
-        // Display Frame
 
-        WriteConsoleOutputCharacter(hConsole, screen, screenWidth * screenHeight, { 0,0 }, &dwBytesWritten);
+
+        // Display Frame
+        if (lines.empty())
+            WriteConsoleOutputCharacter(hConsole, screen, screenWidth * screenHeight, { 0,0 }, &dwBytesWritten);
+        else {
+            WriteConsoleOutputCharacter(hConsole, screen, screenWidth * screenHeight, { 0,0 }, &dwBytesWritten);
+            this_thread::sleep_for(400ms);
+
+            for (auto &v : lines) 
+                for (int px = 1; px < fieldWidth - 1; px++) {
+                    for (int py = v; py > 0; py--)
+                        playingField[(py * fieldWidth) + px] = playingField[((py - 1) * fieldWidth) + px];
+                    playingField[px] = 0;
+                }
+            lines.clear();
+        }
     }
 
     return 0;
@@ -156,9 +225,10 @@ bool doesPieceFit(int tetrominoIndex, int rotation, int posX, int posY) {
             int positionIndex = rotate(px, py, rotation);
             int fieldIndex = (posY + py) * fieldWidth + (posX + px);
 
-            if ((posX + px >= 0 && posX + px < fieldWidth) && (posY + py >= 0 && posY + py < fieldHeight))
-                if (tetromino[tetrominoIndex][positionIndex] == L'X' && playingField[fieldIndex] != 0)
-                    return false;
+            if (posX + px >= 0 && posX + px < fieldWidth)
+                if (posY + py >= 0 && posY + py < fieldHeight)
+                    if (tetromino[tetrominoIndex][positionIndex] == L'X' && playingField[fieldIndex] != 0)
+                        return false;
         }
 
     return true;
