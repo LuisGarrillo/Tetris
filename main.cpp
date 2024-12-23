@@ -40,6 +40,7 @@ int main()
     bool gameOver = false;
 
     int currentPiece = rand() % 7;
+    int nextPiece = rand() % 7;
     int currentRotation = 0;
     int currentX = fieldWidth / 2;
     int currentY = 0;
@@ -68,6 +69,11 @@ int main()
 
 
         // GAME LOGIC
+        if (!doesPieceFit(currentPiece, currentRotation, currentX, currentY)) {
+            gameOver = true;
+            break;
+        }
+
         currentX += (keys[0] && doesPieceFit(currentPiece, currentRotation, currentX + 1, currentY)) ? 1 : 0;
         currentX -= (keys[1] && doesPieceFit(currentPiece, currentRotation, currentX - 1, currentY)) ? 1 : 0;
         currentY += (keys[2] && doesPieceFit(currentPiece, currentRotation, currentX, currentY + 1)) ? 1 : 0;
@@ -89,11 +95,6 @@ int main()
                     for (int py = 0; py < 4; py++)
                         if (tetromino[currentPiece][rotate(px, py, currentRotation)] == L'X')
                             playingField[(currentY + py) * fieldWidth + (currentX + px)] = currentPiece + 1;
-
-                if (currentY <= 3) {
-                    gameOver = true;
-                    break;
-                }
 
                 pieceCount++;
                 if (pieceCount % 10 == 0)
@@ -119,12 +120,18 @@ int main()
                 score += 25;
                 if (!lines.empty()) score += (1 << lines.size()) * 100;
 
+                // Clean Next Piece space
+                for (int px = 0; px < 4; px++)
+                    for (int py = 0; py < 4; py++)
+                        if (tetromino[nextPiece][rotate(px, py, 0)] == L'X')
+                            screen[(5 + py) * screenWidth + fieldWidth + 6 + px] = 0;
 
                 // Choose next piece
                 currentRotation = 0;
                 currentX = fieldWidth / 2;
                 currentY = 0;
-                currentPiece = rand() % 7;
+                currentPiece = nextPiece;
+                nextPiece = rand() % 7;
 
                 speedCounter = 0;
             }
@@ -145,6 +152,14 @@ int main()
                     screen[(currentY + py + 2) * screenWidth + (currentX + px + 2)] = currentPiece + 65;
 
         swprintf_s(&screen[2 * screenWidth + fieldWidth + 6 ], 16, L"SCORE: %8d", score);
+
+        // Display next piece 
+        swprintf(&screen[4 * screenWidth + fieldWidth + 6], 16, L"NEXT PIECE: ");
+
+        for (int px = 0; px < 4; px++)
+            for (int py = 0; py < 4; py++)
+                if (tetromino[nextPiece][rotate(px, py, 0)] == L'X')
+                    screen[(5 + py) * screenWidth + fieldWidth + 6 + px] = nextPiece + 65;
 
 
         // Display Frame
@@ -167,7 +182,7 @@ int main()
     }
 
     CloseHandle(hConsole);
-    cout << "Game Over!! Score: " << score << endl;
+    std::cout << "Game Over!! Score: " << score << endl;
     system("pause");
 
     return 0;
