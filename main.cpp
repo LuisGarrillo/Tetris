@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <vector>
 #include <thread>
+#include <random>
 
 using namespace std;
 void createAssets();
@@ -39,8 +40,10 @@ int main()
 
     bool gameOver = false;
 
-    int currentPiece = rand() % 7;
-    int nextPiece = rand() % 7;
+    random_device tetrominoGenerator;
+
+    int currentPiece = tetrominoGenerator() % 7;
+    int nextPiece = tetrominoGenerator() % 7;
     int currentRotation = 0;
     int currentX = fieldWidth / 2;
     int currentY = 0;
@@ -58,7 +61,7 @@ int main()
 
     while (!gameOver) {
         // GAME TIMING
-        this_thread::sleep_for(50ms);
+        this_thread::sleep_for(2.5ms * speed);
         speedCounter++;
         forceDown = (speedCounter == speed);
 
@@ -131,7 +134,7 @@ int main()
                 currentX = fieldWidth / 2;
                 currentY = 0;
                 currentPiece = nextPiece;
-                nextPiece = rand() % 7;
+                nextPiece = tetrominoGenerator() % 7;
 
                 speedCounter = 0;
             }
